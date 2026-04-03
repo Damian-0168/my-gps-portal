@@ -31,3 +31,7 @@ build/
 
 # Git
 .git/
+-e 
+# Environment files
+*.env
+*.env.*
