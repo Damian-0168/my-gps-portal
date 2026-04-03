@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+.npm/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Traccar Data & Logs (Exclude from AI context)
+traccar/data/
+traccar/logs/
+traccar-logs/
+
+# Build
+dist/
+build/
+.next/
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Git
+.git/
