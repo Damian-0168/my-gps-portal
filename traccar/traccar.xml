@@ -16,14 +16,30 @@
     <entry key='database.user'>sa</entry>
     <entry key='database.password'></entry>
 
-    <entry key='web.origin'>http://localhost:5173,http://localhost:8082</entry>
+    <!-- CORS Configuration - Allow both local and preview URLs -->
+    <entry key='web.origin'>http://localhost:5173,http://localhost:3000,https://*.emergentagent.com,https://*.preview.emergentagent.com</entry>
     <entry key='web.debug'>true</entry>
 
-    <!-- Webhook Forwarding to Supabase (Phase 4 Placeholder) -->
     <!-- 
+    ============================================
+    WEBHOOK FORWARDING TO SUPABASE (Phase 3)
+    ============================================
+    To enable position/event forwarding to Supabase for history archiving:
+    
+    1. Deploy the Edge Function in /supabase/functions/traccar-webhook
+    2. Uncomment the entries below and replace placeholders:
+       - YOUR_SUPABASE_PROJECT: Your Supabase project ID (e.g., vxabocjympwjqjymvjzz)
+       - YOUR_SUPABASE_ANON_KEY: Your Supabase anon/public key
+    
+    3. Restart Traccar: docker-compose restart traccar
+    -->
+    
+    <!-- UNCOMMENT TO ENABLE WEBHOOK FORWARDING -->
+    <!--
     <entry key='event.forward.enable'>true</entry>
     <entry key='event.forward.url'>https://YOUR_SUPABASE_PROJECT.supabase.co/functions/v1/traccar-webhook</entry>
     <entry key='event.forward.header'>Authorization: Bearer YOUR_SUPABASE_ANON_KEY</entry>
+    <entry key='event.forward.json'>true</entry>
     -->
 
 </properties>
