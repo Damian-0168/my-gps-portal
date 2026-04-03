@@ -35,11 +35,9 @@
     -->
     
     <!-- UNCOMMENT TO ENABLE WEBHOOK FORWARDING -->
-    <!--
     <entry key='event.forward.enable'>true</entry>
-    <entry key='event.forward.url'>https://YOUR_SUPABASE_PROJECT.supabase.co/functions/v1/traccar-webhook</entry>
-    <entry key='event.forward.header'>Authorization: Bearer YOUR_SUPABASE_ANON_KEY</entry>
+    <entry key='event.forward.url'>https://vxabocjympwjqjymvjzz.supabase.co/functions/v1/traccar-webhook</entry>
+    <entry key='event.forward.header'>Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4YWJvY2p5bXB3anFqeW12anp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3NzcwNTMsImV4cCI6MjA5MDM1MzA1M30.Oml6xyoM7SWM9sRuB-K5FWOwKEWZGHjANeVvS9Ua2jc</entry>
     <entry key='event.forward.json'>true</entry>
-    -->
 
 </properties>
