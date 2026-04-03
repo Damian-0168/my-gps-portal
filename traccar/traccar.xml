@@ -16,8 +16,9 @@
     <entry key='database.user'>sa</entry>
     <entry key='database.password'></entry>
 
-    <!-- CORS Configuration - Allow both local and preview URLs -->
-    <entry key='web.origin'>http://localhost:5173,http://localhost:3000,https://*.emergentagent.com,https://*.preview.emergentagent.com</entry>
+    <!-- CORS Configuration - Allow frontend origins -->
+    <!-- Note: Wildcards may not work in all Traccar versions. Add explicit URLs. -->
+    <entry key='web.origin'>http://localhost:5173,http://localhost:3000,http://localhost:8082,https://f409f45a-84aa-440d-b077-5d802320af18.preview.emergentagent.com</entry>
     <entry key='web.debug'>true</entry>
 
     <!-- 
