@@ -52,6 +52,10 @@ export const useGPSStore = create<GPSState>((set) => ({
     vehicles: [...state.vehicles, vehicle],
   })),
   
+  addVehicle: (vehicle) => set((state) => ({
+    vehicles: [...state.vehicles, vehicle],
+  })),
+  
   setPositions: (positions) => set({ positions }),
   
   updatePosition: (position) => set((state) => ({

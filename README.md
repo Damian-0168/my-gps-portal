@@ -30,10 +30,32 @@ docker-compose up -d
 ### 3. Frontend Setup
 1. `cd frontend`
 2. `cp .env.example .env`
-3. Update `.env` with your Supabase and Traccar credentials.
+3. Update `.env` with your Supabase credentials.
 4. `npm install`
 5. `npm run dev`
 
+## Development Notes
+
+### Vite Proxy Configuration
+
+**Important:** In development, the frontend proxies all Traccar API calls through Vite. **Never hardcode port 8082 in frontend code.**
+
+The Vite config (`vite.config.ts`) includes a proxy that:
+- Routes `/api/*` requests to `http://localhost:8082`
+- Handles WebSocket connections (`/api/socket`) for real-time updates
+- Preserves session cookies with `withCredentials: true`
+
+```typescript
+// In frontend code, always use relative paths:
+const response = await fetch('/api/devices');  // ✅ Correct
+const response = await fetch('http://localhost:8082/api/devices');  // ❌ Wrong
+```
+
+### WebSocket Connection
+The WebSocket connects to `/api/socket` which is proxied to Traccar. Features:
+- Automatic reconnection with exponential backoff
+- Real-time position and device status updates
+- Connection status reflected in UI
 **Development and Traccar:** The Vite dev server proxies all `/api` HTTP and WebSocket traffic to Traccar on port 8082. The frontend uses relative URLs (`/api/...`) by default—do **not** hardcode port `8082` in frontend code. To talk to Traccar on a different host or bypass the proxy, set `VITE_TRACCAR_BASE_URL` in `.env`.
 
 ## Data Flow
