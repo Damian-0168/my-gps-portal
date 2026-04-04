@@ -15,11 +15,24 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     allowedHosts: true,
+    // Proxy all /api requests to Traccar server
     proxy: {
       '/api': {
         target: 'http://localhost:8082',
         changeOrigin: true,
         secure: false,
+        ws: true, // CRITICAL: Enable WebSocket proxying
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.log('[Vite Proxy] Error:', err.message);
+          });
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            console.log('[Vite Proxy] Request:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req, _res) => {
+            console.log('[Vite Proxy] Response:', proxyRes.statusCode, req.url);
+          });
+        },
         ws: true,
         rewrite: (path) => path.replace(/^\/api/, '/api'),
       },

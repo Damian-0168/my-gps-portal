@@ -79,6 +79,16 @@ GPS Device → Traccar (8082) → WebSocket → Frontend (3000)
 - ✅ Updated Auth.tsx with improved UX (loading states, error messages)
 - ✅ Fixed CORS config in traccar.xml with explicit preview URL
 
+### April 4, 2026 (WebSocket & Add Vehicle Fix)
+- ✅ Added Vite proxy configuration for /api with WebSocket support (ws: true)
+- ✅ Changed API from hardcoded localhost:8082 to relative /api paths
+- ✅ Updated WebSocket to use buildWebSocketUrl() for proxy compatibility
+- ✅ Added traccarCreateDevice function for device registration
+- ✅ Created AddVehicleModal component with Traccar + Supabase integration
+- ✅ Added addVehicle action to Zustand store
+- ✅ Updated Dashboard with Add Vehicle button (+)
+- ✅ Updated README with Vite proxy documentation
+
 ## Prioritized Backlog
 
 ### P0 (Critical)

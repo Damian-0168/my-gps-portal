@@ -22,6 +22,8 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function Dashboard() {
+  const [showAddVehicle, setShowAddVehicle] = useState(false);
+  
   const { 
     vehicles, 
     positions, 
@@ -51,18 +53,23 @@ export default function Dashboard() {
       setVehicles(supabaseVehicles || []);
 
       // 2. Fetch initial positions and devices from Traccar
-      const [posList, devList] = await Promise.all([
-        fetchLatestPositions(),
-        fetchDevices()
-      ]);
+      try {
+        const [posList, devList] = await Promise.all([
+          fetchLatestPositions(),
+          fetchDevices()
+        ]);
 
-      const posMap: Record<number, TraccarPosition> = {};
-      posList.forEach(p => posMap[p.deviceId] = p);
-      setPositions(posMap);
+        const posMap: Record<number, TraccarPosition> = {};
+        posList.forEach(p => posMap[p.deviceId] = p);
+        setPositions(posMap);
 
-      const devMap: Record<number, typeof devList[0]> = {};
-      devList.forEach(d => devMap[d.id] = d);
-      setDevices(devMap);
+        const devMap: Record<number, typeof devList[0]> = {};
+        devList.forEach(d => devMap[d.id] = d);
+        setDevices(devMap);
+      } catch (traccarErr) {
+        console.warn('[Dashboard] Traccar fetch failed:', traccarErr);
+        // Don't fail completely if Traccar is down
+      }
 
       // 3. Connect WebSocket for real-time updates
       traccarWS.connect();
@@ -96,8 +103,7 @@ export default function Dashboard() {
   };
 
   const handleReconnect = () => {
-    traccarWS.disconnect();
-    setTimeout(() => traccarWS.connect(), 500);
+    traccarWS.reconnect();
   };
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -125,6 +131,16 @@ export default function Dashboard() {
         
         <nav className="flex-1 overflow-y-auto p-4 space-y-2">
           <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Vehicles ({vehicles.length})
+            </span>
+            <button
+              onClick={() => setShowAddVehicle(true)}
+              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+              title="Add Vehicle"
+              data-testid="add-vehicle-btn"
+            >
+              <Plus className="w-4 h-4" />
             <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               Vehicles ({vehicles.length})
             </div>
@@ -178,6 +194,12 @@ export default function Dashboard() {
           {vehicles.length === 0 && !isLoading && (
             <div className="text-sm text-gray-400 italic text-center py-8">
               No vehicles added yet.
+              <button 
+                onClick={() => setShowAddVehicle(true)}
+                className="block mx-auto mt-2 text-blue-600 hover:underline"
+              >
+                Add your first vehicle
+              </button>
             </div>
           )}
         </nav>
@@ -274,6 +296,10 @@ export default function Dashboard() {
         </div>
       </main>
 
+      {/* Add Vehicle Modal */}
+      <AddVehicleModal 
+        isOpen={showAddVehicle} 
+        onClose={() => setShowAddVehicle(false)} 
       <AddVehicleModal 
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
