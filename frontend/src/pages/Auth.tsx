@@ -234,7 +234,7 @@ export default function Auth() {
         {/* Debug Info (development only) */}
         {import.meta.env.DEV && (
           <div className="text-xs text-slate-400 text-center pt-4 border-t border-slate-100">
-            <p>Traccar: {import.meta.env.VITE_TRACCAR_BASE_URL || 'http://localhost:8082'}</p>
+            <p>Traccar: /api (proxied)</p>
             <p>Supabase: {import.meta.env.VITE_SUPABASE_URL?.split('.')[0]?.replace('https://', '')}</p>
           </div>
         )}

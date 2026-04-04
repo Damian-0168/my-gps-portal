@@ -1,12 +1,21 @@
 import { useGPSStore } from './store';
 import { TraccarPosition, TraccarDevice } from './api';
 
-const TRACCAR_BASE_URL = import.meta.env.VITE_TRACCAR_BASE_URL || 'http://localhost:8082';
-
 interface WebSocketMessage {
   positions?: TraccarPosition[];
   devices?: TraccarDevice[];
   events?: any[];
+}
+
+/**
+ * Build WebSocket URL that works with Vite proxy
+ * In development: ws://localhost:3000/api/socket (proxied to Traccar)
+ * In production: Uses the same origin as the page
+ */
+function buildWebSocketUrl(): string {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = window.location.host;
+  return `${protocol}//${host}/api/socket`;
 }
 
 class TraccarWebSocket {
@@ -25,8 +34,8 @@ class TraccarWebSocket {
 
     this.isIntentionallyClosed = false;
     
-    // Convert http(s) to ws(s)
-    const wsUrl = TRACCAR_BASE_URL.replace(/^http/, 'ws') + '/api/socket';
+    // Use relative path that goes through Vite proxy
+    const wsUrl = buildWebSocketUrl();
     
     console.log('[WS] Connecting to:', wsUrl);
     
@@ -108,7 +117,8 @@ class TraccarWebSocket {
       return;
     }
 
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts);
+    // Exponential backoff: 1s, 2s, 4s, 8s... up to 30s max
+    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts), 30000);
     console.log(`[WS] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
     
     this.reconnectTimer = setTimeout(() => {
@@ -135,6 +145,13 @@ class TraccarWebSocket {
 
   isConnected(): boolean {
     return this.ws?.readyState === WebSocket.OPEN;
+  }
+
+  // Force reconnect (useful for manual retry)
+  reconnect(): void {
+    this.disconnect();
+    this.reconnectAttempts = 0; // Reset attempts
+    setTimeout(() => this.connect(), 500);
   }
 }
 

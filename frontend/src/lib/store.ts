@@ -22,6 +22,7 @@ interface GPSState {
   
   // Actions
   setVehicles: (vehicles: Vehicle[]) => void;
+  addVehicle: (vehicle: Vehicle) => void;
   setPositions: (positions: Record<number, TraccarPosition>) => void;
   updatePosition: (position: TraccarPosition) => void;
   setDevices: (devices: Record<number, TraccarDevice>) => void;
@@ -42,6 +43,10 @@ export const useGPSStore = create<GPSState>((set) => ({
   
   // Actions
   setVehicles: (vehicles) => set({ vehicles }),
+  
+  addVehicle: (vehicle) => set((state) => ({
+    vehicles: [...state.vehicles, vehicle],
+  })),
   
   setPositions: (positions) => set({ positions }),
   

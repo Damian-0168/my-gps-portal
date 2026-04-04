@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { fetchLatestPositions, fetchDevices, TraccarPosition } from '../lib/api';
@@ -6,7 +6,8 @@ import { supabase } from '../lib/supabase';
 import { useGPSStore } from '../lib/store';
 import { traccarWS } from '../lib/websocket';
 import { AnimatedMarker } from '../components/AnimatedMarker';
-import { Car, Map as MapIcon, Settings, LogOut, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { AddVehicleModal } from '../components/AddVehicleModal';
+import { Car, Map as MapIcon, Settings, LogOut, Wifi, WifiOff, RefreshCw, Plus } from 'lucide-react';
 
 // Fix for default marker icons in Leaflet + React
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -21,6 +22,8 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function Dashboard() {
+  const [showAddVehicle, setShowAddVehicle] = useState(false);
+  
   const { 
     vehicles, 
     positions, 
@@ -48,18 +51,23 @@ export default function Dashboard() {
       setVehicles(supabaseVehicles || []);
 
       // 2. Fetch initial positions and devices from Traccar
-      const [posList, devList] = await Promise.all([
-        fetchLatestPositions(),
-        fetchDevices()
-      ]);
+      try {
+        const [posList, devList] = await Promise.all([
+          fetchLatestPositions(),
+          fetchDevices()
+        ]);
 
-      const posMap: Record<number, TraccarPosition> = {};
-      posList.forEach(p => posMap[p.deviceId] = p);
-      setPositions(posMap);
+        const posMap: Record<number, TraccarPosition> = {};
+        posList.forEach(p => posMap[p.deviceId] = p);
+        setPositions(posMap);
 
-      const devMap: Record<number, typeof devList[0]> = {};
-      devList.forEach(d => devMap[d.id] = d);
-      setDevices(devMap);
+        const devMap: Record<number, typeof devList[0]> = {};
+        devList.forEach(d => devMap[d.id] = d);
+        setDevices(devMap);
+      } catch (traccarErr) {
+        console.warn('[Dashboard] Traccar fetch failed:', traccarErr);
+        // Don't fail completely if Traccar is down
+      }
 
       // 3. Connect WebSocket for real-time updates
       traccarWS.connect();
@@ -87,8 +95,7 @@ export default function Dashboard() {
   };
 
   const handleReconnect = () => {
-    traccarWS.disconnect();
-    setTimeout(() => traccarWS.connect(), 500);
+    traccarWS.reconnect();
   };
 
   return (
@@ -113,8 +120,18 @@ export default function Dashboard() {
         </div>
         
         <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Vehicles ({vehicles.length})
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Vehicles ({vehicles.length})
+            </span>
+            <button
+              onClick={() => setShowAddVehicle(true)}
+              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+              title="Add Vehicle"
+              data-testid="add-vehicle-btn"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
           </div>
           
           {vehicles.map(v => {
@@ -158,6 +175,12 @@ export default function Dashboard() {
           {vehicles.length === 0 && !isLoading && (
             <div className="text-sm text-gray-400 italic text-center py-8">
               No vehicles added yet.
+              <button 
+                onClick={() => setShowAddVehicle(true)}
+                className="block mx-auto mt-2 text-blue-600 hover:underline"
+              >
+                Add your first vehicle
+              </button>
             </div>
           )}
         </nav>
@@ -247,6 +270,12 @@ export default function Dashboard() {
           )}
         </div>
       </main>
+
+      {/* Add Vehicle Modal */}
+      <AddVehicleModal 
+        isOpen={showAddVehicle} 
+        onClose={() => setShowAddVehicle(false)} 
+      />
     </div>
   );
 }
