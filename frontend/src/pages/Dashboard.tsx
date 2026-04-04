@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { fetchLatestPositions, fetchDevices, TraccarPosition } from '../lib/api';
@@ -6,7 +6,8 @@ import { supabase } from '../lib/supabase';
 import { useGPSStore } from '../lib/store';
 import { traccarWS } from '../lib/websocket';
 import { AnimatedMarker } from '../components/AnimatedMarker';
-import { Car, Map as MapIcon, Settings, LogOut, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { AddVehicleModal } from '../components/AddVehicleModal';
+import { Car, Map as MapIcon, Settings, LogOut, Wifi, WifiOff, RefreshCw, Plus } from 'lucide-react';
 
 // Fix for default marker icons in Leaflet + React
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -28,11 +29,13 @@ export default function Dashboard() {
     isConnected, 
     isLoading, 
     error,
+    connectionNotice,
     setVehicles,
     setPositions,
     setDevices,
     setLoading,
-    setError
+    setError,
+    setConnectionNotice
   } = useGPSStore();
 
   // Initial data fetch
@@ -81,6 +84,12 @@ export default function Dashboard() {
     };
   }, [fetchInitialData]);
 
+  useEffect(() => {
+    if (!connectionNotice) return;
+    const t = window.setTimeout(() => setConnectionNotice(null), 4500);
+    return () => window.clearTimeout(t);
+  }, [connectionNotice, setConnectionNotice]);
+
   const handleLogout = () => {
     traccarWS.disconnect();
     supabase.auth.signOut();
@@ -90,6 +99,8 @@ export default function Dashboard() {
     traccarWS.disconnect();
     setTimeout(() => traccarWS.connect(), 500);
   };
+
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-gray-50" data-testid="dashboard">
@@ -113,8 +124,17 @@ export default function Dashboard() {
         </div>
         
         <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Vehicles ({vehicles.length})
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Vehicles ({vehicles.length})
+            </div>
+            <button 
+              onClick={() => setIsAddModalOpen(true)}
+              className="p-1 hover:bg-blue-50 text-blue-600 rounded-full transition-colors"
+              title="Add Vehicle"
+            >
+              <Plus size={18} />
+            </button>
           </div>
           
           {vehicles.map(v => {
@@ -240,6 +260,12 @@ export default function Dashboard() {
             </div>
           )}
           
+          {connectionNotice && (
+            <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg text-sm max-w-xs shadow-sm">
+              {connectionNotice}
+            </div>
+          )}
+
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm max-w-xs">
               {error}
@@ -247,6 +273,11 @@ export default function Dashboard() {
           )}
         </div>
       </main>
+
+      <AddVehicleModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+      />
     </div>
   );
 }

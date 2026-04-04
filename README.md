@@ -34,6 +34,8 @@ docker-compose up -d
 4. `npm install`
 5. `npm run dev`
 
+**Development and Traccar:** The Vite dev server proxies all `/api` HTTP and WebSocket traffic to Traccar on port 8082. The frontend uses relative URLs (`/api/...`) by default—do **not** hardcode port `8082` in frontend code. To talk to Traccar on a different host or bypass the proxy, set `VITE_TRACCAR_BASE_URL` in `.env`.
+
 ## Data Flow
 The dashboard fetches user vehicles from Supabase, then queries Traccar for the latest positions of those specific `traccar_device_id`s. This ensures business data (names, VINs, ownership) is kept separate from high-frequency GPS data.
 

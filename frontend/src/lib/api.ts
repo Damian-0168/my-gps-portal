@@ -1,7 +1,15 @@
 import axios, { AxiosError } from 'axios';
 
-const TRACCAR_BASE_URL = import.meta.env.VITE_TRACCAR_BASE_URL || 'http://localhost:8082';
-const TRACCAR_API_URL = `${TRACCAR_BASE_URL}/api`;
+/** In dev, use `/api` so Vite proxies to Traccar. Set VITE_TRACCAR_BASE_URL to override (e.g. direct server URL). */
+function getTraccarApiBaseUrl(): string {
+  const fromEnv = import.meta.env.VITE_TRACCAR_BASE_URL;
+  if (fromEnv != null && String(fromEnv).trim() !== '') {
+    return `${String(fromEnv).replace(/\/$/, '')}/api`;
+  }
+  return '/api';
+}
+
+const TRACCAR_API_URL = getTraccarApiBaseUrl();
 
 // Admin credentials for user registration (should be in env in production)
 const TRACCAR_ADMIN_EMAIL = import.meta.env.VITE_TRACCAR_USERNAME || 'admin';
@@ -201,6 +209,17 @@ export const traccarSmartLogin = async (
     // Re-throw for other error types
     throw loginError;
   }
+};
+
+/**
+ * Create a new device in Traccar
+ */
+export const traccarCreateDevice = async (name: string, uniqueId: string): Promise<TraccarDevice> => {
+  const response = await traccarApi.post('/devices', {
+    name,
+    uniqueId,
+  });
+  return response.data;
 };
 
 export const fetchLatestPositions = async (): Promise<TraccarPosition[]> => {
