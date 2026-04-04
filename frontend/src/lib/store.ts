@@ -19,6 +19,8 @@ interface GPSState {
   isConnected: boolean;
   isLoading: boolean;
   error: string | null;
+  /** Short-lived message (e.g. after WebSocket reconnect) */
+  connectionNotice: string | null;
   
   // Actions
   setVehicles: (vehicles: Vehicle[]) => void;
@@ -30,6 +32,7 @@ interface GPSState {
   setConnectionStatus: (connected: boolean) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setConnectionNotice: (message: string | null) => void;
 }
 
 export const useGPSStore = create<GPSState>((set) => ({
@@ -40,9 +43,14 @@ export const useGPSStore = create<GPSState>((set) => ({
   isConnected: false,
   isLoading: true,
   error: null,
+  connectionNotice: null,
   
   // Actions
   setVehicles: (vehicles) => set({ vehicles }),
+
+  addVehicle: (vehicle) => set((state) => ({
+    vehicles: [...state.vehicles, vehicle],
+  })),
   
   addVehicle: (vehicle) => set((state) => ({
     vehicles: [...state.vehicles, vehicle],
@@ -71,4 +79,6 @@ export const useGPSStore = create<GPSState>((set) => ({
   setLoading: (isLoading) => set({ isLoading }),
   
   setError: (error) => set({ error }),
+
+  setConnectionNotice: (connectionNotice) => set({ connectionNotice }),
 }));

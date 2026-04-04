@@ -1,6 +1,20 @@
 import { useGPSStore } from './store';
 import { TraccarPosition, TraccarDevice } from './api';
 
+/**
+ * Same-origin WebSocket so the browser sends Traccar session cookies (see axios withCredentials).
+ * In dev, Vite proxies `ws(s)://<dev host>/api/socket` → Traccar :8082.
+ */
+function resolveTraccarWebSocketUrl(): string {
+  const fromEnv = import.meta.env.VITE_TRACCAR_BASE_URL;
+  if (fromEnv != null && String(fromEnv).trim() !== '') {
+    const base = String(fromEnv).replace(/^http/, 'ws').replace(/\/$/, '');
+    return `${base}/api/socket`;
+  }
+  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${proto}//${window.location.host}/api/socket`;
+}
+
 interface WebSocketMessage {
   positions?: TraccarPosition[];
   devices?: TraccarDevice[];
@@ -25,6 +39,8 @@ class TraccarWebSocket {
   private reconnectDelay = 1000;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private isIntentionallyClosed = false;
+  /** Used to show reconnect toast only after a drop, not on first-ever connect */
+  private hadSuccessfulConnection = false;
 
   connect(): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
@@ -37,6 +53,9 @@ class TraccarWebSocket {
     // Use relative path that goes through Vite proxy
     const wsUrl = buildWebSocketUrl();
     
+
+    const wsUrl = resolveTraccarWebSocketUrl();
+
     console.log('[WS] Connecting to:', wsUrl);
     
     try {
@@ -53,9 +72,15 @@ class TraccarWebSocket {
 
     this.ws.onopen = () => {
       console.log('[WS] Connected successfully');
+      const wasReconnect =
+        this.hadSuccessfulConnection && this.reconnectAttempts > 0;
       this.reconnectAttempts = 0;
+      this.hadSuccessfulConnection = true;
       useGPSStore.getState().setConnectionStatus(true);
       useGPSStore.getState().setError(null);
+      if (wasReconnect) {
+        useGPSStore.getState().setConnectionNotice('Live tracking reconnected');
+      }
     };
 
     this.ws.onmessage = (event) => {

@@ -31,11 +31,13 @@ export default function Dashboard() {
     isConnected, 
     isLoading, 
     error,
+    connectionNotice,
     setVehicles,
     setPositions,
     setDevices,
     setLoading,
-    setError
+    setError,
+    setConnectionNotice
   } = useGPSStore();
 
   // Initial data fetch
@@ -89,6 +91,12 @@ export default function Dashboard() {
     };
   }, [fetchInitialData]);
 
+  useEffect(() => {
+    if (!connectionNotice) return;
+    const t = window.setTimeout(() => setConnectionNotice(null), 4500);
+    return () => window.clearTimeout(t);
+  }, [connectionNotice, setConnectionNotice]);
+
   const handleLogout = () => {
     traccarWS.disconnect();
     supabase.auth.signOut();
@@ -97,6 +105,8 @@ export default function Dashboard() {
   const handleReconnect = () => {
     traccarWS.reconnect();
   };
+
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-gray-50" data-testid="dashboard">
@@ -131,6 +141,15 @@ export default function Dashboard() {
               data-testid="add-vehicle-btn"
             >
               <Plus className="w-4 h-4" />
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Vehicles ({vehicles.length})
+            </div>
+            <button 
+              onClick={() => setIsAddModalOpen(true)}
+              className="p-1 hover:bg-blue-50 text-blue-600 rounded-full transition-colors"
+              title="Add Vehicle"
+            >
+              <Plus size={18} />
             </button>
           </div>
           
@@ -263,6 +282,12 @@ export default function Dashboard() {
             </div>
           )}
           
+          {connectionNotice && (
+            <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg text-sm max-w-xs shadow-sm">
+              {connectionNotice}
+            </div>
+          )}
+
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm max-w-xs">
               {error}
@@ -275,6 +300,9 @@ export default function Dashboard() {
       <AddVehicleModal 
         isOpen={showAddVehicle} 
         onClose={() => setShowAddVehicle(false)} 
+      <AddVehicleModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
       />
     </div>
   );

@@ -12,7 +12,7 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 3000,
+    port: 5173,
     strictPort: true,
     allowedHosts: true,
     // Proxy all /api requests to Traccar server
@@ -33,6 +33,8 @@ export default defineConfig({
             console.log('[Vite Proxy] Response:', proxyRes.statusCode, req.url);
           });
         },
+        ws: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
       },
     },
   },
