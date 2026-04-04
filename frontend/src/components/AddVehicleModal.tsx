@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { traccarCreateDevice } from '../lib/api';
+import { traccarCreateDevice, formatAddVehicleTraccarError } from '../lib/api';
 import { supabase } from '../lib/supabase';
 import { useGPSStore } from '../lib/store';
 import { X, Loader2, Plus } from 'lucide-react';
@@ -32,10 +32,11 @@ export function AddVehicleModal({ isOpen, onClose }: AddVehicleModalProps) {
       // 1. Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('You must be logged in to add a vehicle');
+      if (!user.email) throw new Error('Your account has no email; cannot sync with GPS server.');
 
-      // 2. Create device in Traccar
+      // 2. Create device in Traccar (admin API + link to this user's Traccar account)
       console.log('[AddVehicle] Creating device in Traccar...');
-      const traccarDevice = await traccarCreateDevice(formData.name, formData.uniqueId);
+      const traccarDevice = await traccarCreateDevice(formData.name, formData.uniqueId, user.email);
 
       // 3. Create vehicle in Supabase
       console.log('[AddVehicle] Creating vehicle in Supabase...');
@@ -59,9 +60,9 @@ export function AddVehicleModal({ isOpen, onClose }: AddVehicleModalProps) {
       // Success!
       onClose();
       setFormData({ name: '', uniqueId: '', model: '', licensePlate: '' });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[AddVehicle] Error:', err);
-      setError(err.message || 'Failed to add vehicle');
+      setError(formatAddVehicleTraccarError(err));
     } finally {
       setLoading(false);
     }

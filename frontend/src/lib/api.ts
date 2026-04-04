@@ -212,14 +212,97 @@ export const traccarSmartLogin = async (
 };
 
 /**
- * Create a new device in Traccar
+ * Traccar REST allows HTTP Basic auth (see https://www.traccar.org/traccar-api/).
+ * Use a dedicated client without cookies so we don't replace the end-user's session.
+ * Creating devices requires an administrator — normal portal users only have a user session.
  */
-export const traccarCreateDevice = async (name: string, uniqueId: string): Promise<TraccarDevice> => {
-  const response = await traccarApi.post('/devices', {
-    name,
-    uniqueId,
+function createTraccarAdminApi() {
+  return axios.create({
+    baseURL: TRACCAR_API_URL,
+    auth: {
+      username: TRACCAR_ADMIN_EMAIL,
+      password: TRACCAR_ADMIN_PASSWORD,
+    },
+    headers: { 'Content-Type': 'application/json' },
+    withCredentials: false,
   });
-  return response.data;
+}
+
+/**
+ * Create a device in Traccar as admin, then link it to the portal user's Traccar account via /permissions.
+ * @param ownerEmail — same email as Supabase / Traccar login (used to resolve Traccar user id).
+ */
+export const traccarCreateDevice = async (
+  name: string,
+  uniqueId: string,
+  ownerEmail: string
+): Promise<TraccarDevice> => {
+  const adminApi = createTraccarAdminApi();
+  let createdId: number | null = null;
+  try {
+    const { data: device } = await adminApi.post<TraccarDevice>('/devices', { name, uniqueId });
+    createdId = device.id;
+
+    const { data: users } = await adminApi.get<TraccarUser[]>('/users', {
+      params: { keyword: ownerEmail.trim() },
+    });
+    const owner = users.find(
+      (u) => u.email?.toLowerCase() === ownerEmail.trim().toLowerCase()
+    );
+    if (!owner) {
+      throw new Error(
+        'NO_TRACCAR_USER: No GPS account found for your email. Log out and log back in so your account syncs with the GPS server, then try again.'
+      );
+    }
+
+    await adminApi.post('/permissions', { userId: owner.id, deviceId: device.id });
+    return device;
+  } catch (err) {
+    if (createdId != null) {
+      try {
+        await adminApi.delete(`/devices/${createdId}`);
+      } catch {
+        // best-effort rollback
+      }
+    }
+    throw err;
+  }
+};
+
+/** Maps axios / network failures from Add Vehicle to readable UI text. */
+export const formatAddVehicleTraccarError = (err: unknown): string => {
+  if (axios.isAxiosError(err)) {
+    const status = err.response?.status;
+    if (status === 502 || status === 503 || status === 504) {
+      return (
+        'Cannot reach the GPS server (bad gateway). Start Traccar (e.g. on port 8082), confirm the dev proxy in vite.config, ' +
+        'or set VITE_TRACCAR_BASE_URL if the API is hosted elsewhere, then try again.'
+      );
+    }
+    if (!err.response) {
+      return 'Network error — check that Traccar is running and reachable from this browser.';
+    }
+    if (status === 401) {
+      return 'Traccar admin authentication failed. Check VITE_TRACCAR_USERNAME / VITE_TRACCAR_PASSWORD match your Traccar admin account.';
+    }
+    const data = err.response?.data as { message?: string } | string | undefined;
+    const msg =
+      typeof data === 'object' && data && 'message' in data && typeof data.message === 'string'
+        ? data.message
+        : err.message;
+    return msg || 'Request to GPS server failed.';
+  }
+  if (err instanceof Error) {
+    if (err.message.startsWith('NO_TRACCAR_USER:')) {
+      return err.message.replace(/^NO_TRACCAR_USER:\s*/, '');
+    }
+    return err.message;
+  }
+  if (err && typeof err === 'object' && 'message' in err) {
+    const m = (err as { message?: unknown }).message;
+    if (typeof m === 'string') return m;
+  }
+  return 'Failed to add vehicle';
 };
 
 export const fetchLatestPositions = async (): Promise<TraccarPosition[]> => {
