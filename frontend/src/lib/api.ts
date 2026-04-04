@@ -224,7 +224,6 @@ function createTraccarAdminApi() {
       password: TRACCAR_ADMIN_PASSWORD,
     },
     headers: { 'Content-Type': 'application/json' },
-    withCredentials: false,
   });
 }
 
